@@ -1,0 +1,27 @@
+{
+  "name": "mongodb-git-backup",
+  "version": "1.0.0",
+  "description": "Dumps a MongoDB database to a Git repo for backup",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aramk/mongodb-git-backup.git"
+  },
+  "author": "Aram Kocharyan <akarmenia@gmai.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aramk/mongodb-git-backup/issues"
+  },
+  "homepage": "https://github.com/aramk/mongodb-git-backup#readme",
+  "dependencies": {
+    "cron": "^1.1.0",
+    "mongodb-backup": "^1.5.4",
+    "q": "^1.4.1",
+    "recursive-readdir": "^2.0.0",
+    "simple-git": "^1.32.0",
+    "yargs": "^4.6.0"
+  }
+}
