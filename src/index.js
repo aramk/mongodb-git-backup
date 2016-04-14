@@ -23,30 +23,43 @@ if (!uri) {
 var CronJob = require('cron').CronJob;
 // Run every hour by default.
 var cronRange = yargs.argv.cron || '00 00 * * * *';
-var job = new CronJob(cronRange, function() {
-    log('Running cron job...');
-    backup();
-  }, function () {
-    log('Completed cron job');
-  },
+var job = new CronJob(cronRange, run,
   true, /* Start the job right now */
-  'Australia/Melbourne'
+  yargs.argv.timezone || 'Australia/Melbourne'
 );
 
-var lastBackupDf;
+var runDf;
 
-function backup() {
-  Q.when(lastBackupDf && lastBackupDf.promise).then(_backup);
+function run() {
+  // Prevent running if previous run is incomplete.
+  if (runDf && runDf.promise && Q.isPending(runDf.promise)) return;
+
+  runDf = Q.defer();
+  runDf.resolve(backup().then(push));
 }
 
-function _backup() {
+function backup() {
   log('Backing up data...');
+  var df = Q.defer();
   mongoBackup({
     uri: uri,
-    root: dir
+    root: dir,
+    callback: function(err, result) {
+      if (err) {
+        log('Error during backup', err);
+        df.reject(err);
+      } else {
+        log('Backup successful', result);
+        df.resolve(result);
+      }
+    }
   });
+  return df.promise;
+}
+
+function push() {
   log('Adding to Git...');
-  lastBackupDf = Q.defer();
+  var df = Q.defer();
   require('simple-git')(dir)
     .add('./*')
     .then(function() {
@@ -59,8 +72,9 @@ function _backup() {
     .push('origin', 'master')
     .then(function() {
       log('Pushed to Git');
-      lastBackupDf.resolve();
+      df.resolve();
     });
+  return df.promise;
 }
 
 function log() {
