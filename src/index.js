@@ -49,9 +49,16 @@ function _backup() {
   lastBackupDf = Q.defer();
   require('simple-git')(dir)
     .add('./*')
+    .then(function() {
+      log('Committing...');
+    })
     .commit('Update')
+    .then(function() {
+      log('Pushing...');
+    })
     .push('origin', 'master')
     .then(function() {
+      log('Pushed to Git');
       lastBackupDf.resolve();
     });
 }
