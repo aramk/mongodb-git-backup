@@ -18,6 +18,7 @@
   "homepage": "https://github.com/aramk/mongodb-git-backup#readme",
   "dependencies": {
     "cron": "^1.1.0",
+    "del": "^2.2.2",
     "mongodb-backup": "^1.5.4",
     "q": "^1.4.1",
     "recursive-readdir": "^2.0.0",

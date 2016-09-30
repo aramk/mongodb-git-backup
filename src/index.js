@@ -3,6 +3,7 @@ var fs = require('fs');
 var path = require('path');
 var mongoBackup = require('mongodb-backup');
 var readdir = require('recursive-readdir');
+var del = require('del');
 var Q = require('q');
 
 var dir = yargs.argv.dir;
@@ -20,22 +21,29 @@ if (!uri) {
   throw new Error('No MongoDB URI provided');
 }
 
-var CronJob = require('cron').CronJob;
-// Run every hour by default.
-var cronRange = yargs.argv.cron || '00 00 * * * *';
-var job = new CronJob(cronRange, run,
-  true, /* Start the job right now */
-  yargs.argv.timezone || 'Australia/Melbourne'
-);
+// Allow running the processs immediately without scheduling.
+if (yargs.argv.now != null) {
+  run();
+} else {
+  var CronJob = require('cron').CronJob;
+  // Run every hour by default.
+  var cronRange = yargs.argv.cron || '00 00 * * * *';
+  var job = new CronJob(cronRange, run,
+    true, /* Start the job right now */
+    yargs.argv.timezone || 'Australia/Melbourne'
+  );
+}
 
 var runDf;
-
 function run() {
   // Prevent running if previous run is incomplete.
   if (runDf && runDf.promise && Q.isPending(runDf.promise)) return;
 
   runDf = Q.defer();
-  runDf.resolve(backup().then(push));
+  runDf.resolve(deleteFiles(dir).then(backup).then(push));
+  runDf.promise.catch(function(err) {
+    console.error(err, err.stack);
+  }).done();
 }
 
 function backup() {
@@ -69,12 +77,36 @@ function push() {
     .then(function() {
       log('Pushing...');
     })
-    .push('origin', 'master')
+    // TODO(aramk)
+    // .push('origin', 'master')
     .then(function() {
       log('Pushed to Git');
       df.resolve();
     });
   return df.promise;
+}
+
+// Deletes the existing files in the subdirectores of the given directory.
+function deleteFiles(dir) {
+  log('Deleting existing files...');
+  var df = Q.defer();
+
+  // Exclude hidden directories (e.g. git).
+  var subdirs = getDirectories(dir).filter(function(directory) {
+    return !/^\./.test(directory);
+  });
+  log('Deleting directories:', subdirs);
+  var paths = subdirs.map(function(subdir) {
+    return path.join(dir, subdir, '**');
+  });
+  return Q.resolve(del(paths, {force: true}));
+}
+
+// http://stackoverflow.com/questions/18112204
+function getDirectories(srcpath) {
+  return fs.readdirSync(srcpath).filter(function(file) {
+    return fs.statSync(path.join(srcpath, file)).isDirectory();
+  });
 }
 
 function log() {
