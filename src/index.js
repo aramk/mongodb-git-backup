@@ -77,8 +77,7 @@ function push() {
     .then(function() {
       log('Pushing...');
     })
-    // TODO(aramk)
-    // .push('origin', 'master')
+    .push('origin', 'master')
     .then(function() {
       log('Pushed to Git');
       df.resolve();
