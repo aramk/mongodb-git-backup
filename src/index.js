@@ -68,16 +68,21 @@ function backup() {
 function push() {
   log('Adding to Git...');
   var df = Q.defer();
+
+  function callback(err, result) {
+    if (err) df.reject(err);
+  }
+
   require('simple-git')(dir)
-    .add('./*')
+    .add('./*', callback)
     .then(function() {
       log('Committing...');
     })
-    .commit('Update')
+    .commit('Update', callback)
     .then(function() {
       log('Pushing...');
     })
-    .push('origin', 'master')
+    .push('origin', 'master', callback)
     .then(function() {
       log('Pushed to Git');
       df.resolve();
