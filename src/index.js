@@ -1,3 +1,5 @@
+'use strict';
+
 const yargs = require('yargs');
 const fs = require('fs');
 const path = require('path');
@@ -51,8 +53,8 @@ function run() {
 function backup() {
   log('Backing up data...');
   const df = Q.defer();
-  const {host, port, username, password, db} = getUriInfo(uri);
-  child_process.exec(`mongodump --host="${host}" --port="${port}" --username="${username}" --password="${password}" --db="${db}" --out=${dir}`, {}, (err, stdout, stderr) => {
+  const info = getUriInfo(uri);
+  child_process.exec(`mongodump --host="${info.host}" --port="${info.port}" --username="${info.username}" --password="${info.password}" --db="${info.db}" --out=${dir}`, {}, (err, stdout, stderr) => {
     if (err) {
       log('Error during backup', err);
       df.reject(err);
