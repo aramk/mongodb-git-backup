@@ -5,7 +5,6 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 const readdir = require('recursive-readdir');
-const del = require('del');
 const Q = require('q');
 
 let dir = yargs.argv.dir;
@@ -97,9 +96,10 @@ function deleteFiles(dir) {
   const df = Q.defer();
 
   // Exclude hidden directories (e.g. git).
-  const dbDir = path.join(dir, uriInfo.db, '**');
+  const dbDir = path.join(dir, uriInfo.db);
   log('Deleting directory:', dbDir);
-  return Q.resolve(del(dbDir, {force: true}));
+
+  return Q.ninvoke(child_process, 'exec', `rm -rf ${dbDir}`, {});
 }
 
 // http://stackoverflow.com/questions/18112204
