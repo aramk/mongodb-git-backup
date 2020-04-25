@@ -22,7 +22,8 @@ const uri = yargs.argv.uri;
 if (!uri) {
   throw new Error('No MongoDB URI provided');
 }
-console.log(`Parsed URI: ${JSON.stringify(getUriInfo(uri))}`);
+const uriInfo = getUriInfo(uri);
+console.log(`Parsed URI: ${JSON.stringify(uriInfo)}`);
 
 let runDf;
 
@@ -53,8 +54,7 @@ function run() {
 function backup() {
   log('Backing up data...');
   const df = Q.defer();
-  const info = getUriInfo(uri);
-  child_process.exec(`mongodump --host="${info.host}" --port="${info.port}" --username="${info.username}" --password="${info.password}" --db="${info.db}" --out=${dir}`, {}, (err, stdout, stderr) => {
+  child_process.exec(`mongodump --host="${uriInfo.host}" --port="${uriInfo.port}" --username="${uriInfo.username}" --password="${uriInfo.password}" --db="${uriInfo.db}" --out=${dir}`, {}, (err, stdout, stderr) => {
     if (err) {
       log('Error during backup', err);
       df.reject(err);
@@ -97,14 +97,9 @@ function deleteFiles(dir) {
   const df = Q.defer();
 
   // Exclude hidden directories (e.g. git).
-  const subdirs = getDirectories(dir).filter(function(directory) {
-    return !/^\./.test(directory);
-  });
-  log('Deleting directories:', subdirs);
-  const paths = subdirs.map(function(subdir) {
-    return path.join(dir, subdir, '**');
-  });
-  return Q.resolve(del(paths, {force: true}));
+  const dbDir = path.join(dir, uriInfo.db, '**');
+  log('Deleting directory:', dbDir);
+  return Q.resolve(del(dbDir, {force: true}));
 }
 
 // http://stackoverflow.com/questions/18112204
