@@ -3,6 +3,7 @@
 const yargs = require('yargs');
 const fs = require('fs');
 const path = require('path');
+const mongoBackup = require('mongodb-backup');
 const child_process = require('child_process');
 const readdir = require('recursive-readdir');
 const Q = require('q');
@@ -53,13 +54,17 @@ function run() {
 function backup() {
   log('Backing up data...');
   const df = Q.defer();
-  child_process.exec(`mongodump --host="${uriInfo.host}" --port="${uriInfo.port}" --username="${uriInfo.username}" --password="${uriInfo.password}" --db="${uriInfo.db}" --out=${dir}`, {}, (err, stdout, stderr) => {
-    if (err) {
-      log('Error during backup', err);
-      df.reject(err);
-    } else {
-      log('Backup successful', stdout);
-      df.resolve();
+  mongoBackup({
+    uri: uri,
+    root: dir,
+    callback: (err, result) => {
+      if (err) {
+        log('Error during backup', err);
+        df.reject(err);
+      } else {
+        log('Backup successful', result);
+        df.resolve(result);
+      }
     }
   });
   return df.promise;
